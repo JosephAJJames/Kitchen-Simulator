@@ -1,19 +1,26 @@
 -module(main).
--export([manager/0, customer/1]).
+-export([manager/1, customer/2, chef/0, custIter/2]).
 
 customer({DishName, TimeToCook}, Cid) -> %Cid = Pid of a chef process
    Cid ! {DishName, TimeToCook};
-customer({}) ->
+customer({}, _) ->
    {};
-customer(_) ->
-   io:format("~s~p", "Wrong Format").
+customer(_, _) ->
+   io:format("~s~n", ["Wrong Format"]).
 
 chef() ->
    receive
-      _ -> io:format("~s~n", "Recieved Data")
+      {DishName, TimeToCook} -> io:format("Received Order: ~p~n", [DishName]),
+      chef()
    end.
 
-manager() ->
-   io:format("~s~n", "Starting..."),
+custIter([Head | Tail] ,Cid) ->
+   spawn(main, customer, [Head, Cid]),
+   custIter(Tail, Cid);
+custIter([], Cid) ->
+   Cid.
+
+manager(List) ->
+   io:format("~s~n", ["Starting..."]),
    Cid = spawn(main, chef, []),
-   spawn(main, customer, [{Pasta, 500}, Cid]).
+   custIter(List, Cid).
